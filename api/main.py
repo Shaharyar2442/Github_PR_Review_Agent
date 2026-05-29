@@ -1,19 +1,23 @@
 from fastapi import FastAPI
 from api.routes.webhook import router as webhook_router
 from api.routes.approval import router as approval_router
+from fastapi.middleware.cors import CORSMiddleware
 
-# ─── YOUR TURN (PHASE 5) ──────────────────────────────────────
-# Goal: Initialize the FastAPI app and register our routers.
-# Hint:
-# 1. Create a FastAPI app instance: `app = FastAPI(title="PR Review Agent")`
-# 2. Include the webhook router: `app.include_router(webhook_router)`
-# 3. Include the approval router: `app.include_router(approval_router)`
-# Expected result: A functional FastAPI app that routes traffic correctly.
-# ────────────────────────────────────────────────────────────
+
 # TODO: Initialize your app here!
 app=FastAPI(title="PR Review Agent")
+
+
+
 app.include_router(webhook_router)
 app.include_router(approval_router)
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 if __name__ == "__main__":
     import uvicorn

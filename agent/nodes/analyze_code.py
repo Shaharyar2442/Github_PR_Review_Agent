@@ -11,7 +11,7 @@ from config import GEMINI_API_KEY
 
 # Boilerplate: Initialize our LLM (using the free tier Gemini model)
 llm = ChatGoogleGenerativeAI(
-    model="Gemini 3.1 Flash Lite", 
+    model="gemini-3.1-flash-lite", 
     api_key=GEMINI_API_KEY, 
     temperature=0.2
 )
@@ -28,7 +28,7 @@ llm = ChatGoogleGenerativeAI(
 # ────────────────────────────────────────────────────────────
 def analyze_code_node(state:AgentState)->Dict[str,Any]:
     diff=state["pr_diff"]
-    prompt="""
+    prompt=f"""
     You are a Senior AI code reviewer. Your job is to analyze the following pull request diff and provide a detailed review. You should focus on:
     1. Code correctness
     2. Potential bugs

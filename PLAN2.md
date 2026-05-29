@@ -31,6 +31,6 @@ We are upgrading our Code Review Agent from a local terminal script to a multi-t
 * **Done when**: Your agent is running live on the internet, and a friend can install it on their repo!
 
 ## Current status
-* **Phase**: Phase 7 — React Frontend Dashboard
-* **Last completed step**: Approved V2.0 Implementation Plan.
-* **Next step**: Scaffold the Next.js application in the `frontend` folder.
+* **Phase**: Phase 8 — VectorDB & RAG (Agentic Memory)
+* **Last completed step**: Built Next.js Dashboard with glassmorphism cards, approve/reject buttons, and issues/suggestions display (Phase 7).
+* **Next step**: Build the ChromaDB indexer to embed repository files.

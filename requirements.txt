@@ -1,0 +1,11 @@
+fastmcp
+httpx
+python-dotenv
+langgraph
+langgraph-checkpoint-sqlite
+langchain-google-genai
+fastapi
+uvicorn
+loguru
+tenacity
+pydantic

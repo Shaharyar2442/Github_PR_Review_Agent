@@ -4,7 +4,7 @@ from langchain_google_genai import ChatGoogleGenerativeAI
 from langchain_core.messages import HumanMessage
 import sys
 import os
-
+from tenacity import retry,stop_after_attempt,wait_exponential
 sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
 from config import GEMINI_API_KEY
 
@@ -16,16 +16,8 @@ llm = ChatGoogleGenerativeAI(
     temperature=0.2
 )
 
-# ─── YOUR TURN ──────────────────────────────────────────────
-# Goal: Build the second LangGraph node that analyzes the PR diff.
-# Hint: Create a function `analyze_code_node(state: AgentState) -> Dict[str, Any]`.
-#       Inside it:
 
-#       1. Create a prompt string that asks the LLM to analyze the `state["pr_diff"]`.
-#       2. Call the LLM using: `response = llm.invoke([HumanMessage(content=prompt)])`
-#       3. Return a dictionary mapping "raw_analysis" to `response.content`.
-# Expected result: A function that uses Gemini to analyze the diff and returns the text.
-# ────────────────────────────────────────────────────────────
+@retry(stop=stop_after_attempt(3), wait=wait_exponential(multiplier=1, min=2, max=10))
 def analyze_code_node(state:AgentState)->Dict[str,Any]:
     diff=state["pr_diff"]
     prompt=f"""

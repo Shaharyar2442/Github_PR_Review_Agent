@@ -16,5 +16,8 @@ class AgentState(TypedDict):
     pr_metadata:Dict[str,Any] 
     pr_diff:str
     raw_analysis:str
-
+    issues:list[str]
+    suggestions:list[str]
+    approval_status:str
+    
 

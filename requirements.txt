@@ -9,3 +9,8 @@ uvicorn
 loguru
 tenacity
 pydantic
+psycopg
+langgraph-checkpoint-postgres
+PyJWT
+cryptography
+gunicorn

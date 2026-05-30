@@ -19,9 +19,27 @@ router = APIRouter()
 # Expected result: Clean, color-coded logs in your terminal whenever a webhook hits!
 # ────────────────────────────────────────────────────────────
 
-# TODO: Add your webhook route here!
+import hmac
+import hashlib
+from fastapi import HTTPException
+import sys
+import os
+sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
+from config import GITHUB_WEBHOOK_SECRET
+
 @router.post("/webhook")
 async def webhook(request: Request, background_tasks: BackgroundTasks):
+    body = await request.body()
+    signature = request.headers.get("x-hub-signature-256")
+    
+    # Verify GitHub App Webhook Signature
+    if GITHUB_WEBHOOK_SECRET and signature:
+        mac = hmac.new(GITHUB_WEBHOOK_SECRET.encode(), msg=body, digestmod=hashlib.sha256)
+        expected_signature = "sha256=" + mac.hexdigest()
+        if not hmac.compare_digest(expected_signature, signature):
+            logger.warning("Invalid GitHub webhook signature")
+            raise HTTPException(status_code=401, detail="Invalid signature")
+
     payload=await request.json()
     action=payload.get("action")
     logger.info(f"Received webhook")

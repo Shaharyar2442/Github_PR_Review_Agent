@@ -25,7 +25,7 @@ if DATABASE_URL:
         PostgresSaver(setup_conn).setup()
         
     # Now create the pool for the app to use
-    pool = AsyncConnectionPool(conninfo=DATABASE_URL, max_size=20)
+    pool = AsyncConnectionPool(conninfo=DATABASE_URL, max_size=20, open=False)
     memory = AsyncPostgresSaver(pool)
 else:
     from langgraph.checkpoint.memory import MemorySaver

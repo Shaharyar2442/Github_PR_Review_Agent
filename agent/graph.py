@@ -15,13 +15,17 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from config import DATABASE_URL
 
 if DATABASE_URL:
+    import psycopg
     from langgraph.checkpoint.postgres import PostgresSaver
     from psycopg_pool import ConnectionPool
-    # Supabase provides a Postgres connection string
+    
+    # Supabase requires autocommit=True for CREATE INDEX CONCURRENTLY
+    with psycopg.connect(DATABASE_URL, autocommit=True) as setup_conn:
+        PostgresSaver(setup_conn).setup()
+        
+    # Now create the pool for the app to use
     pool = ConnectionPool(conninfo=DATABASE_URL, max_size=20)
     memory = PostgresSaver(pool)
-    # Automatically create the required LangGraph tables in Supabase
-    memory.setup()
 else:
     from langgraph.checkpoint.memory import MemorySaver
     print("Warning: No DATABASE_URL found. Falling back to in-memory checkpointer.")

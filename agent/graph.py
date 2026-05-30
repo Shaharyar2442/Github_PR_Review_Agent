@@ -1,5 +1,4 @@
 from langgraph.graph import StateGraph, END
-from langgraph.checkpoint.memory import MemorySaver
 from langgraph.types import Command
 from agent.state import AgentState
 
@@ -10,9 +9,23 @@ from agent.nodes.generate_suggestions import generate_suggestions_node
 from agent.nodes.human_approval import human_approval_node
 from agent.nodes.publish_review import publish_review_node
 
+import sys
+import os
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+from config import DATABASE_URL
 
-
-memory=MemorySaver()
+if DATABASE_URL:
+    from langgraph.checkpoint.postgres import PostgresSaver
+    from psycopg_pool import ConnectionPool
+    # Supabase provides a Postgres connection string
+    pool = ConnectionPool(conninfo=DATABASE_URL, max_size=20)
+    memory = PostgresSaver(pool)
+    # Automatically create the required LangGraph tables in Supabase
+    memory.setup()
+else:
+    from langgraph.checkpoint.memory import MemorySaver
+    print("Warning: No DATABASE_URL found. Falling back to in-memory checkpointer.")
+    memory = MemorySaver()
 builder = StateGraph(AgentState)
 builder.add_node("fetch", fetch_pr_node)
 builder.add_node("analyze", analyze_code_node)

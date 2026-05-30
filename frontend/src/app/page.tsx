@@ -18,7 +18,8 @@ export default function Dashboard() {
   // Fetch the pending reviews from our FastAPI backend
   const fetchReviews = async () => {
     try {
-      const res = await fetch("http://127.0.0.1:8000/pending");
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://127.0.0.1:8000";
+      const res = await fetch(`${apiUrl}/pending`);
       const data = await res.json();
       setReviews(data.pending_reviews || []);
     } catch (e) {
@@ -35,7 +36,8 @@ export default function Dashboard() {
   // Function to approve or reject a review
   const handleApproval = async (thread_id: string, status: "approved" | "rejected") => {
     try {
-      await fetch("http://127.0.0.1:8000/approve", {
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://127.0.0.1:8000";
+      await fetch(`${apiUrl}/approve`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ thread_id, status })

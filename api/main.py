@@ -7,20 +7,16 @@ from contextlib import asynccontextmanager
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    # Open the database connection pool on startup
     try:
-        from agent.graph import pool
-        if pool is not None:
-            await pool.open()
-    except ImportError:
-        pass
+        from agent.graph import init_graph, close_graph
+        await init_graph()
+    except Exception as e:
+        print("Failed to initialize graph:", e)
     yield
-    # Close the pool on shutdown
     try:
-        from agent.graph import pool
-        if pool is not None:
-            await pool.close()
-    except ImportError:
+        from agent.graph import close_graph
+        await close_graph()
+    except Exception as e:
         pass
 
 # TODO: Initialize your app here!

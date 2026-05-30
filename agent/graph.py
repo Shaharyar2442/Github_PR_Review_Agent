@@ -24,35 +24,57 @@ if DATABASE_URL:
     with psycopg.connect(DATABASE_URL, autocommit=True) as setup_conn:
         PostgresSaver(setup_conn).setup()
         
-    # Now create the pool for the app to use
-    pool = AsyncConnectionPool(conninfo=DATABASE_URL, max_size=20, open=False)
-    memory = AsyncPostgresSaver(pool)
-else:
-    from langgraph.checkpoint.memory import MemorySaver
-    print("Warning: No DATABASE_URL found. Falling back to in-memory checkpointer.")
-    memory = MemorySaver()
-builder = StateGraph(AgentState)
-builder.add_node("fetch", fetch_pr_node)
-builder.add_node("analyze", analyze_code_node)
-builder.add_node("classify", classify_issues_node)
-builder.add_node("suggest", generate_suggestions_node)
-builder.add_node("human_approval", human_approval_node)
-builder.add_node("publish", publish_review_node)
+_pool = None
+_graph = None
 
-builder.set_entry_point("fetch")
-builder.add_edge("fetch", "analyze")
-builder.add_edge("analyze", "classify")
-builder.add_edge("classify", "suggest")
-builder.add_edge("suggest","human_approval")
+async def init_graph():
+    global _pool, _graph
+    if _graph is not None:
+        return
+        
+    if DATABASE_URL:
+        # Initialize pool and memory inside the running event loop
+        _pool = AsyncConnectionPool(conninfo=DATABASE_URL, max_size=20, open=False)
+        await _pool.open()
+        memory = AsyncPostgresSaver(_pool)
+    else:
+        from langgraph.checkpoint.memory import MemorySaver
+        print("Warning: No DATABASE_URL found. Falling back to in-memory checkpointer.")
+        memory = MemorySaver()
+        
+    builder = StateGraph(AgentState)
+    builder.add_node("fetch", fetch_pr_node)
+    builder.add_node("analyze", analyze_code_node)
+    builder.add_node("classify", classify_issues_node)
+    builder.add_node("suggest", generate_suggestions_node)
+    builder.add_node("human_approval", human_approval_node)
+    builder.add_node("publish", publish_review_node)
 
-def route_after_approval(state: AgentState):
-    if state.get("approval_status") == "approved":
-        return "publish"
-    return END
-builder.add_conditional_edges("human_approval", route_after_approval)
-builder.add_edge("publish", END)
+    builder.set_entry_point("fetch")
+    builder.add_edge("fetch", "analyze")
+    builder.add_edge("analyze", "classify")
+    builder.add_edge("classify", "suggest")
+    builder.add_edge("suggest","human_approval")
 
-graph = builder.compile(checkpointer=memory)
+    def route_after_approval(state: AgentState):
+        if state.get("approval_status") == "approved":
+            return "publish"
+        return END
+    builder.add_conditional_edges("human_approval", route_after_approval)
+    builder.add_edge("publish", END)
+    
+    _graph = builder.compile(checkpointer=memory)
+
+async def close_graph():
+    global _pool
+    if _pool is not None:
+        await _pool.close()
+
+def get_graph():
+    global _graph
+    if _graph is None:
+        raise RuntimeError("Graph not initialized. Ensure init_graph() is called in FastAPI lifespan.")
+    return _graph
 
 
 if __name__ == "__main__":

@@ -3,29 +3,16 @@ from fastapi import APIRouter, BackgroundTasks, Request
 from pydantic import BaseModel
 from typing import Dict, Any
 from loguru import logger
-# We'll import our graph to trigger it!
-from agent.graph import graph
-
-router = APIRouter()
-
-# ─── YOUR TURN (PHASE 6) ──────────────────────────────────────
-# Goal: Harden our webhook route with structured logging and error handling.
-# Hint:
-# 1. Import `logger` from `loguru`: `from loguru import logger`
-# 2. Replace the basic `print` or empty states with `logger.info(...)`
-#    Example: `logger.info(f"Received webhook for PR #{pr_number}")`
-# 3. Add a basic `try/except` block inside `run_agent` to catch and log any errors
-#    during the LangGraph execution: `logger.error(f"Agent failed: {e}")`
-# Expected result: Clean, color-coded logs in your terminal whenever a webhook hits!
-# ────────────────────────────────────────────────────────────
-
+from agent.graph import get_graph
 import hmac
 import hashlib
-from fastapi import HTTPException
+from fastapi import APIRouter, HTTPException
 import sys
 import os
 sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
 from config import GITHUB_WEBHOOK_SECRET
+
+router = APIRouter()
 
 @router.post("/webhook")
 async def webhook(request: Request, background_tasks: BackgroundTasks):
@@ -62,6 +49,7 @@ async def webhook(request: Request, background_tasks: BackgroundTasks):
         }
         config={"configurable":{"thread_id":f"pr_{pr_number}"}}
         try:
+            graph = get_graph()
             await graph.ainvoke(initial_state,config=config)
             logger.info("Webhook received and agent started")
             return responses.JSONResponse({"message":"Webhook received and agent started"})

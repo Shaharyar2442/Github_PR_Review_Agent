@@ -1,7 +1,7 @@
 from fastapi import APIRouter
 from pydantic import BaseModel
 from langgraph.types import Command
-from agent.graph import graph
+from agent.graph import get_graph
 
 router = APIRouter()
 
@@ -12,6 +12,7 @@ class ApprovalRequest(BaseModel):
 
 @router.post("/approve")
 async def approve(request: ApprovalRequest):
+    graph = get_graph()
     config = {"configurable": {"thread_id": request.thread_id}}
     await graph.ainvoke(Command(resume=request.status), config=config)
     return {"message": f"Graph resumed with status: {request.status}"}
@@ -19,6 +20,7 @@ async def approve(request: ApprovalRequest):
 
 @router.get("/pending")
 async def pending():
+    graph = get_graph()
     pending_list = []
     async for thread in graph.checkpointer.alist(None):
         snapshot = await graph.aget_state(thread.config)

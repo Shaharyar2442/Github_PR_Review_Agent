@@ -11,14 +11,14 @@ class ApprovalRequest(BaseModel):
 
 
 @router.post("/approve")
-async def approve(request: ApprovalRequest):
+def approve(request: ApprovalRequest):
     config = {"configurable": {"thread_id": request.thread_id}}
-    await graph.ainvoke(Command(resume=request.status), config=config)
+    graph.invoke(Command(resume=request.status), config=config)
     return {"message": f"Graph resumed with status: {request.status}"}
     
 
 @router.get("/pending")
-async def pending():
+def pending():
     threads = graph.checkpointer.list(None)
     pending = []
     for thread in threads:

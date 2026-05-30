@@ -17,11 +17,12 @@ def index_repository(repo_path: str):
     client = chromadb.PersistentClient(path=os.path.join(repo_path, "chroma_db"))
 
     # Step 2: Create the embedding function and collection
-    embedding_fn = embedding_functions.SentenceTransformerEmbeddingFunction(
-        model_name="all-MiniLM-L6-v2"
+    from config import GEMINI_API_KEY
+    embedding_fn = embedding_functions.GoogleGenerativeAiEmbeddingFunction(
+        api_key=GEMINI_API_KEY
     )
     collection = client.get_or_create_collection(
-        name="codebase", embedding_function=embedding_fn
+        name="codebase_gemini", embedding_function=embedding_fn
     )
 
     # Step 3: Walk the repo and index files

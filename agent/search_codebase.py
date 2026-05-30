@@ -9,11 +9,12 @@ def search_codebase(query: str, n_results: int = 5) -> str:
     repo_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
     client = chromadb.PersistentClient(path=os.path.join(repo_root, "chroma_db"))
 
-    embedding_fn = embedding_functions.SentenceTransformerEmbeddingFunction(
-        model_name="all-MiniLM-L6-v2"
+    from config import GEMINI_API_KEY
+    embedding_fn = embedding_functions.GoogleGenerativeAiEmbeddingFunction(
+        api_key=GEMINI_API_KEY
     )
     collection = client.get_or_create_collection(
-        name="codebase", embedding_function=embedding_fn
+        name="codebase_gemini", embedding_function=embedding_fn
     )
 
     # Query ChromaDB for the most semantically similar documents

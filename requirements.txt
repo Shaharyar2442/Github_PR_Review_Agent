@@ -15,4 +15,3 @@ PyJWT
 cryptography
 gunicorn
 chromadb
-sentence-transformers

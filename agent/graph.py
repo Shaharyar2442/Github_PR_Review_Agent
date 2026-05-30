@@ -63,7 +63,7 @@ async def init_graph():
     builder.add_conditional_edges("human_approval", route_after_approval)
     builder.add_edge("publish", END)
     
-    _graph = builder.compile(checkpointer=memory)
+    _graph = builder.compile(checkpointer=memory, interrupt_before=["human_approval"])
 
 async def close_graph():
     global _pool

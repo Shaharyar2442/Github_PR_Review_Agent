@@ -66,7 +66,7 @@ async def webhook(request: Request, background_tasks: BackgroundTasks):
             logger.info("Webhook received and agent started")
             return responses.JSONResponse({"message":"Webhook received and agent started"})
         except Exception as e:
-            logger.error(f"Agent failed: {e}")
+            logger.exception("Agent failed:")
             return responses.JSONResponse({"message":"Webhook received but agent failed to start"})
 
     background_tasks.add_task(run_agent,owner,repo,pr_number)

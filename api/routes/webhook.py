@@ -54,7 +54,7 @@ async def webhook(request: Request, background_tasks: BackgroundTasks):
     repo=payload.get("repository").get("name")
     logger.info(f"Received webhook for PR #{pr_number} by {owner} in repo {repo}")
 
-    def run_agent(owner,repo,pr_number):
+    async def run_agent(owner,repo,pr_number):
         initial_state={
             "owner":owner,
             "repo":repo,
@@ -62,7 +62,7 @@ async def webhook(request: Request, background_tasks: BackgroundTasks):
         }
         config={"configurable":{"thread_id":f"pr_{pr_number}"}}
         try:
-            graph.invoke(initial_state,config=config)
+            await graph.ainvoke(initial_state,config=config)
             logger.info("Webhook received and agent started")
             return responses.JSONResponse({"message":"Webhook received and agent started"})
         except Exception as e:

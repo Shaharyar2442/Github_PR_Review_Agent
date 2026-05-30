@@ -11,21 +11,20 @@ class ApprovalRequest(BaseModel):
 
 
 @router.post("/approve")
-def approve(request: ApprovalRequest):
+async def approve(request: ApprovalRequest):
     config = {"configurable": {"thread_id": request.thread_id}}
-    graph.invoke(Command(resume=request.status), config=config)
+    await graph.ainvoke(Command(resume=request.status), config=config)
     return {"message": f"Graph resumed with status: {request.status}"}
     
 
 @router.get("/pending")
-def pending():
-    threads = graph.checkpointer.list(None)
-    pending = []
-    for thread in threads:
-        snapshot = graph.get_state(thread.config)
+async def pending():
+    pending_list = []
+    async for thread in graph.checkpointer.alist(None):
+        snapshot = await graph.aget_state(thread.config)
         if snapshot.next == ("human_approval",):
             state = snapshot.values
-            pending.append({
+            pending_list.append({
                 "thread_id": snapshot.config["configurable"]["thread_id"],
                 "owner": state.get("owner"),
                 "repo": state.get("repo"),
@@ -33,4 +32,4 @@ def pending():
                 "issues": state.get("issues", []),
                 "suggestions": state.get("suggestions", [])
             })
-    return {"pending_reviews": pending}
+    return {"pending_reviews": pending_list}

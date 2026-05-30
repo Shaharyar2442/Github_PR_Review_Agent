@@ -17,15 +17,16 @@ from config import DATABASE_URL
 if DATABASE_URL:
     import psycopg
     from langgraph.checkpoint.postgres import PostgresSaver
-    from psycopg_pool import ConnectionPool
+    from langgraph.checkpoint.postgres.aio import AsyncPostgresSaver
+    from psycopg_pool import AsyncConnectionPool
     
     # Supabase requires autocommit=True for CREATE INDEX CONCURRENTLY
     with psycopg.connect(DATABASE_URL, autocommit=True) as setup_conn:
         PostgresSaver(setup_conn).setup()
         
     # Now create the pool for the app to use
-    pool = ConnectionPool(conninfo=DATABASE_URL, max_size=20)
-    memory = PostgresSaver(pool)
+    pool = AsyncConnectionPool(conninfo=DATABASE_URL, max_size=20)
+    memory = AsyncPostgresSaver(pool)
 else:
     from langgraph.checkpoint.memory import MemorySaver
     print("Warning: No DATABASE_URL found. Falling back to in-memory checkpointer.")

@@ -9,7 +9,7 @@ uvicorn
 loguru
 tenacity
 pydantic
-psycopg
+psycopg[binary]
 langgraph-checkpoint-postgres
 PyJWT
 cryptography

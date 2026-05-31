@@ -24,7 +24,7 @@ def index_repository(repo_path: str):
     class CustomGeminiEmbeddingFunction(EmbeddingFunction):
         def __init__(self, api_key: str):
             self.embeddings = GoogleGenerativeAIEmbeddings(
-                model="models/text-embedding-004",
+                model="models/gemini-embedding-2",
                 google_api_key=api_key
             )
         def __call__(self, input: Documents) -> Embeddings:

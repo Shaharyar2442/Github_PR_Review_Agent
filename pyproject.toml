@@ -1,0 +1,11 @@
+[project]
+name = "pr-review-agent"
+version = "0.1.0"
+description = "AI-powered Pull Request Code Review SaaS"
+requires-python = ">=3.10"
+
+[tool.setuptools]
+py-modules = ["config"]
+
+[tool.setuptools.packages.find]
+include = ["agent*", "api*"]

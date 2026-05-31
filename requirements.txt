@@ -1,7 +1,6 @@
 httpx
 python-dotenv
 langgraph
-langgraph-checkpoint-sqlite
 langchain-google-genai
 google-generativeai
 fastapi
@@ -14,8 +13,7 @@ langgraph-checkpoint-postgres
 psycopg-binary
 passlib
 bcrypt
-python-jose
-python-multipart
 PyJWT
 cryptography
+python-multipart
 gunicorn

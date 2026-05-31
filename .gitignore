@@ -1,6 +1,8 @@
 .env
 .venv
 PLAN.md
+PLAN2.md
+chroma_db/
 
 # Python ignores
 __pycache__/

@@ -1,31 +1,37 @@
 from fastapi import FastAPI
 from api.routes import webhook, approval, auth
 from fastapi.middleware.cors import CORSMiddleware
-
 from contextlib import asynccontextmanager
+from loguru import logger
+
+from config import ALLOWED_ORIGINS
+
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     try:
         from agent.graph import init_graph, close_graph
         await init_graph()
+        logger.info("Agent graph initialized successfully")
     except Exception as e:
-        print("Failed to initialize graph:", e)
+        logger.error(f"Failed to initialize graph: {e}")
     yield
     try:
         from agent.graph import close_graph
         await close_graph()
-    except Exception as e:
+    except Exception:
         pass
 
 app = FastAPI(title="PR Review Agent Webhook API", lifespan=lifespan)
 
+# Security: Use explicit origin allow-list instead of wildcard.
+# Set ALLOWED_ORIGINS env var as comma-separated list in production.
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=ALLOWED_ORIGINS,
     allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
+    allow_methods=["GET", "POST"],
+    allow_headers=["Authorization", "Content-Type"],
 )
 
 app.include_router(webhook.router)

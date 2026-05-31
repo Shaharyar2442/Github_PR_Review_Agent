@@ -1,29 +1,24 @@
 from typing import Dict, Any
 from agent.state import AgentState
-from langchain_google_genai import ChatGoogleGenerativeAI
+from agent.llm import default_llm
 from langchain_core.messages import HumanMessage
-import sys
-import os
-from tenacity import retry,stop_after_attempt,wait_exponential
+from tenacity import retry, stop_after_attempt, wait_exponential
+from loguru import logger
 
-sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
-from config import GEMINI_API_KEY
-
-
-# Boilerplate: Initialize our LLM (using the free tier Gemini model)
-llm = ChatGoogleGenerativeAI(
-    model="gemini-3.1-flash-lite", 
-    api_key=GEMINI_API_KEY, 
-    temperature=0.2
-)
-
+# Max diff characters to send to the LLM to prevent OOM on huge PRs (#21)
+MAX_DIFF_CHARS = 30_000  # ~7500 tokens, well within flash-lite's context
 
 
 @retry(stop=stop_after_attempt(3), wait=wait_exponential(multiplier=1, min=2, max=10))
-def analyze_code_node(state:AgentState)->Dict[str,Any]:
-    diff=state["pr_diff"]
+def analyze_code_node(state: AgentState) -> Dict[str, Any]:
+    diff = state["pr_diff"]
 
-    prompt=f"""
+    # Guard against massive diffs that could spike memory or exceed context (#21)
+    if len(diff) > MAX_DIFF_CHARS:
+        logger.warning(f"PR diff is {len(diff)} chars, truncating to {MAX_DIFF_CHARS}")
+        diff = diff[:MAX_DIFF_CHARS] + "\n\n[... diff truncated for analysis — only the first portion was reviewed ...]"
+
+    prompt = f"""
     You are a Senior AI code reviewer. Your job is to analyze the following pull request diff and provide a detailed review. You should focus on:
     1. Code correctness
     2. Potential bugs
@@ -39,7 +34,5 @@ def analyze_code_node(state:AgentState)->Dict[str,Any]:
     2. Detailed review
     3. Suggestions
     """
-    response= llm.invoke([HumanMessage(content=prompt)])
-    return {"raw_analysis":response.content}
-    
-    
+    response = default_llm.invoke([HumanMessage(content=prompt)])
+    return {"raw_analysis": response.content}

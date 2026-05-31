@@ -22,7 +22,11 @@ async def approve(request: ApprovalRequest):
 async def pending():
     graph = get_graph()
     pending_list = []
-    async for thread in graph.checkpointer.alist(None):
+    
+    # Materialize the threads list first to release the DB connection from alist!
+    threads = [thread async for thread in graph.checkpointer.alist({"configurable": {}})]
+    
+    for thread in threads:
         snapshot = await graph.aget_state(thread.config)
         if snapshot.next == ("human_approval",):
             state = snapshot.values

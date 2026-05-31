@@ -13,25 +13,40 @@ async def generate_suggestions_node(state: AgentState) -> Dict[str, Any]:
 
     suggestions = []
 
-    # Create the ReAct sub-agent ONCE outside the loop (#9)
-    # Previously this was recreated per-issue, wasting memory on 512MB Render
-    tools = [github_search_code, github_read_file]
-    sub_agent = create_react_agent(default_llm, tools=tools)
+    from langchain_core.tools import tool
 
     head_sha = state.get("pr_metadata", {}).get("head", {}).get("sha", "")
+
+    @tool
+    def search_repo_code(query: str) -> str:
+        """Search the target GitHub repository for code matching the given query."""
+        return github_search_code.invoke({"owner": owner, "repo": repo, "query": query})
+
+    @tool
+    def read_repo_file(file_path: str, start_line: int = 1, end_line: int = -1) -> str:
+        """Read the contents of a specific file from the target GitHub repository."""
+        return github_read_file.invoke({
+            "owner": owner, 
+            "repo": repo, 
+            "file_path": file_path, 
+            "start_line": start_line, 
+            "end_line": end_line, 
+            "ref": head_sha
+        })
+
+    tools = [search_repo_code, read_repo_file]
+    sub_agent = create_react_agent(default_llm, tools=tools)
 
     # Process issues sequentially to avoid blowing up Render's 512MB RAM
     for i, issue in enumerate(issues):
         logger.info(f"Generating suggestion for issue {i+1}/{len(issues)}")
         prompt = f"""
         You are a senior code reviewer reviewing the repository: {owner}/{repo}.
-        You are given a code issue identified in a Pull Request. The PR's code exists at commit SHA: {head_sha}.
+        You are given a code issue identified in a Pull Request.
         Issue: {issue}
         
         Your job is to provide a concise, highly accurate suggestion to fix it.
-        CRITICAL: Use the 'github_search_code' and 'github_read_file' tools to search the {owner}/{repo} repository and understand the context around this issue in the codebase BEFORE answering. Always pass the owner '{owner}' and repo '{repo}' arguments to these tools.
-        
-        IMPORTANT: You MUST pass the argument `ref="{head_sha}"` whenever you use the `github_read_file` tool. If you do not pass this ref, you will read the old main branch code instead of the new Pull Request code, and you will incorrectly think the issue does not exist.
+        CRITICAL: Use the 'search_repo_code' and 'read_repo_file' tools to search the repository and understand the context around this issue in the codebase BEFORE answering.
         
         Return ONLY the final string suggestion.
         """

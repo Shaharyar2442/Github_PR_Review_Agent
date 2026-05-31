@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
-import { GitBranch, Mail, Lock, User, Github } from 'lucide-react';
+import { GitBranch, Mail, Lock, User, AtSign } from 'lucide-react';
 
 export default function Register() {
   const router = useRouter();
@@ -107,7 +107,7 @@ export default function Register() {
               <label className="block text-sm font-medium text-slate-700 mb-1">GitHub Username</label>
               <div className="relative">
                 <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                  <Github className="h-5 w-5 text-slate-400" />
+                  <AtSign className="h-5 w-5 text-slate-400" />
                 </div>
                 <input
                   type="text"

@@ -2,7 +2,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Check, X, AlertTriangle, Lightbulb, LogOut, Github } from 'lucide-react';
+import { Check, X, AlertTriangle, Lightbulb, LogOut, GitBranch } from 'lucide-react';
 
 interface PendingReview {
   thread_id: string;
@@ -141,7 +141,7 @@ export default function Dashboard() {
                   
                   <div className="flex items-center space-x-3 mb-6">
                     <div className="w-10 h-10 rounded-xl bg-purple-100 flex items-center justify-center">
-                      <Github className="w-5 h-5 text-purple-600" />
+                      <GitBranch className="w-5 h-5 text-purple-600" />
                     </div>
                     <div>
                       <h2 className="text-xl font-bold text-slate-800">{review.repo} <span className="text-purple-500">#{review.pr_number}</span></h2>

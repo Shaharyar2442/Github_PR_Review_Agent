@@ -10,9 +10,20 @@ def search_codebase(query: str, n_results: int = 5) -> str:
     client = chromadb.PersistentClient(path=os.path.join(repo_root, "chroma_db"))
 
     from config import GEMINI_API_KEY
-    embedding_fn = embedding_functions.GoogleGenerativeAiEmbeddingFunction(
-        api_key=GEMINI_API_KEY
-    )
+    from langchain_google_genai import GoogleGenerativeAIEmbeddings
+    from chromadb import Documents, EmbeddingFunction, Embeddings
+    
+    class CustomGeminiEmbeddingFunction(EmbeddingFunction):
+        def __init__(self, api_key: str):
+            self.embeddings = GoogleGenerativeAIEmbeddings(
+                model="models/embedding-001",
+                google_api_key=api_key
+            )
+        def __call__(self, input: Documents) -> Embeddings:
+            return self.embeddings.embed_documents(input)
+            
+    embedding_fn = CustomGeminiEmbeddingFunction(api_key=GEMINI_API_KEY)
+    
     collection = client.get_or_create_collection(
         name="codebase_gemini", embedding_function=embedding_fn
     )

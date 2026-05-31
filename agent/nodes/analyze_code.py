@@ -26,6 +26,12 @@ def analyze_code_node(state: AgentState) -> Dict[str, Any]:
     4. Best practices
     5. Suggestions for improvement
     
+    IMPORTANT CRITERIA:
+    - Pay extremely close attention to the `+` and `-` symbols at the start of each line in the diff.
+    - Lines starting with `+` are NEW code being ADDED by the developer. This is where you should look for bugs.
+    - Lines starting with `-` are OLD code being REMOVED by the developer. Do NOT flag bugs or security vulnerabilities on code that is being removed, because the developer is already deleting it!
+
+    
     PR Diff:
     {diff}
     

@@ -18,16 +18,20 @@ async def generate_suggestions_node(state: AgentState) -> Dict[str, Any]:
     tools = [github_search_code, github_read_file]
     sub_agent = create_react_agent(default_llm, tools=tools)
 
+    head_sha = state.get("pr_metadata", {}).get("head", {}).get("sha", "")
+
     # Process issues sequentially to avoid blowing up Render's 512MB RAM
     for i, issue in enumerate(issues):
         logger.info(f"Generating suggestion for issue {i+1}/{len(issues)}")
         prompt = f"""
         You are a senior code reviewer reviewing the repository: {owner}/{repo}.
-        You are given a code issue identified in a PR.
+        You are given a code issue identified in a Pull Request. The PR's code exists at commit SHA: {head_sha}.
         Issue: {issue}
         
         Your job is to provide a concise, highly accurate suggestion to fix it.
         CRITICAL: Use the 'github_search_code' and 'github_read_file' tools to search the {owner}/{repo} repository and understand the context around this issue in the codebase BEFORE answering. Always pass the owner '{owner}' and repo '{repo}' arguments to these tools.
+        
+        IMPORTANT: You MUST pass the argument `ref="{head_sha}"` whenever you use the `github_read_file` tool. If you do not pass this ref, you will read the old main branch code instead of the new Pull Request code, and you will incorrectly think the issue does not exist.
         
         Return ONLY the final string suggestion.
         """

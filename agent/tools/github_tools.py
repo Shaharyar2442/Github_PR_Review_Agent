@@ -46,12 +46,15 @@ def github_search_code(owner: str, repo: str, query: str) -> str:
 
 
 @tool
-def github_read_file(owner: str, repo: str, file_path: str, start_line: int = 1, end_line: int = -1) -> str:
+def github_read_file(owner: str, repo: str, file_path: str, start_line: int = 1, end_line: int = -1, ref: str = None) -> str:
     """
     Read the contents of a specific file from the target GitHub repository.
     Use start_line and end_line to specify a range of lines to read, or leave end_line as -1 to read to the end.
+    The 'ref' parameter should be the PR's head commit SHA to read the code exactly as it exists in the Pull Request.
     """
     url = f"https://api.github.com/repos/{owner}/{repo}/contents/{file_path}"
+    if ref:
+        url += f"?ref={ref}"
     try:
         response = httpx.get(url, headers=get_github_headers(owner, repo), timeout=15)
         _check_rate_limit(response)

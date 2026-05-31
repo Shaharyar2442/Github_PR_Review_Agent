@@ -26,18 +26,21 @@ from langgraph.prebuilt import create_react_agent
 async def generate_suggestions_node(state: AgentState) -> Dict[str, Any]:
     issues = state["issues"]
     
-    async def get_suggestion(issue: str):
-        # We spawn an MCP connection for the sub-agent
-        async with stdio_client(get_server_params()) as (read, write):
-            async with ClientSession(read, write) as session:
-                await session.initialize()
-                tools = await create_langchain_tools(session)
-                
-                # Filter to only the tools we want the sub-agent to use for suggestions
-                allowed_tools = [t for t in tools if t.name in ["search_codebase_tool", "read_file_tool", "get_pr_diff"]]
-                
-                sub_agent = create_react_agent(llm, tools=allowed_tools)
-                
+    # Fix OOM: We spawn the MCP connection ONCE for all issues, 
+    # instead of N concurrent subprocesses.
+    suggestions = []
+    
+    async with stdio_client(get_server_params()) as (read, write):
+        async with ClientSession(read, write) as session:
+            await session.initialize()
+            tools = await create_langchain_tools(session)
+            
+            # Filter to only the tools we want the sub-agent to use
+            allowed_tools = [t for t in tools if t.name in ["search_codebase_tool", "read_file_tool", "get_pr_diff"]]
+            sub_agent = create_react_agent(llm, tools=allowed_tools)
+            
+            # Process issues sequentially to avoid blowing up Render's 512MB RAM
+            for issue in issues:
                 prompt = f"""
                 You are a senior code reviewer. You are given a code issue identified in a PR.
                 Issue: {issue}
@@ -48,10 +51,11 @@ async def generate_suggestions_node(state: AgentState) -> Dict[str, Any]:
                 Return ONLY the final string suggestion.
                 """
                 
-                # Run the sub-agent
-                result = await sub_agent.ainvoke({"messages": [("user", prompt)]})
-                final_message = result["messages"][-1].content
-                return final_message
-    
-    suggestions = await asyncio.gather(*[get_suggestion(i) for i in issues])
+                try:
+                    result = await sub_agent.ainvoke({"messages": [("user", prompt)]})
+                    final_message = result["messages"][-1].content
+                    suggestions.append(final_message)
+                except Exception as e:
+                    suggestions.append(f"Could not generate suggestion due to error: {e}")
+
     return {"suggestions": suggestions}

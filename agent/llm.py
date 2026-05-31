@@ -6,19 +6,21 @@ Instead of each node creating its own ChatGoogleGenerativeAI client
 share instances here to reduce memory footprint on the 512MB Render tier.
 """
 
-from langchain_google_genai import ChatGoogleGenerativeAI
-from config import GEMINI_API_KEY
+from langchain_openai import ChatOpenAI
+from config import OPENROUTER_API_KEY
 
-# Used by analyze_code and generate_suggestions (needs some creativity)
-default_llm = ChatGoogleGenerativeAI(
-    model="gemini-3.1-flash-lite",
-    api_key=GEMINI_API_KEY,
+# OpenRouter uses the OpenAI API standard
+# We use the free gemini-2.0-flash-lite model available on OpenRouter
+default_llm = ChatOpenAI(
+    base_url="https://openrouter.ai/api/v1",
+    api_key=OPENROUTER_API_KEY,
+    model="moonshotai/kimi-k2.6:free",
     temperature=0.2,
 )
 
-# Used by classify_issues (needs deterministic structured output)
-structured_llm = ChatGoogleGenerativeAI(
-    model="gemini-3.1-flash-lite",
-    api_key=GEMINI_API_KEY,
+structured_llm = ChatOpenAI(
+    base_url="https://openrouter.ai/api/v1",
+    api_key=OPENROUTER_API_KEY,
+    model="moonshotai/kimi-k2.6:free",
     temperature=0.0,
 )

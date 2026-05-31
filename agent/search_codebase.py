@@ -16,7 +16,7 @@ def search_codebase(query: str, n_results: int = 5) -> str:
     class CustomGeminiEmbeddingFunction(EmbeddingFunction):
         def __init__(self, api_key: str):
             self.embeddings = GoogleGenerativeAIEmbeddings(
-                model="models/embedding-001",
+                model="models/text-embedding-004",
                 google_api_key=api_key
             )
         def __call__(self, input: Documents) -> Embeddings:

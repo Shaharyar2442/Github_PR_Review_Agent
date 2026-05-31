@@ -26,7 +26,7 @@ async def pending(current_user: dict = Depends(get_current_user)):
         pending_list = []
         
         # Get all unique thread IDs to avoid looking at historical ghost states
-        threads_generator = graph.checkpointer.alist({"configurable": {}})
+        threads_generator = graph.checkpointer.alist(None)
         unique_thread_ids = set([t.config["configurable"]["thread_id"] async for t in threads_generator])
         
         for tid in unique_thread_ids:

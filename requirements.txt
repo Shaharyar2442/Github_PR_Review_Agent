@@ -1,7 +1,7 @@
 httpx
 python-dotenv
 langgraph
-langchain-openai
+langchain-groq
 fastapi
 uvicorn
 loguru

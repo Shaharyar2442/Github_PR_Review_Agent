@@ -7,7 +7,7 @@ load_dotenv()
 
 # Boilerplate configuration loading
 GITHUB_TOKEN = os.getenv("GITHUB_TOKEN")
-OPENROUTER_API_KEY = os.getenv("OPENROUTER_API_KEY")
+GROQ_API_KEY = os.getenv("GROQ_API_KEY")
 
 # Phase 9: Cloud configuration
 DATABASE_URL = os.getenv("DATABASE_URL")
@@ -35,5 +35,5 @@ ALLOWED_ORIGINS = os.getenv("ALLOWED_ORIGINS", "http://localhost:3000,http://127
 
 if not GITHUB_TOKEN and not GITHUB_APP_ID:
     print("Warning: GITHUB_TOKEN or GITHUB_APP_ID is not set. GitHub API calls will fail.")
-if not OPENROUTER_API_KEY:
-    print("Warning: OPENROUTER_API_KEY is not set. LLM calls to OpenRouter will fail. Please add it to your .env file.")
+if not GROQ_API_KEY:
+    print("Warning: GROQ_API_KEY is not set. LLM calls to Groq will fail. Please add it to your .env file.")

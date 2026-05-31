@@ -61,6 +61,17 @@ def github_read_file(owner: str, repo: str, file_path: str, start_line: int = 1,
         response.raise_for_status()
 
         data = response.json()
+        
+        # Handle cases where the AI requests a directory instead of a file
+        if isinstance(data, list):
+            items = []
+            for item in data:
+                suffix = "/" if item.get("type") == "dir" else ""
+                items.append(f"- {item.get('name')}{suffix}")
+            
+            dir_name = file_path if file_path else "Root Directory"
+            return f"Path '{dir_name}' is a directory. Here are its contents:\n" + "\n".join(items)
+
         if "content" not in data:
             size_bytes = data.get("size", "unknown")
             return f"Error: File content not found. File may be too large ({size_bytes} bytes). GitHub API only returns files up to 1MB via this endpoint."
@@ -92,6 +103,11 @@ def github_read_file(owner: str, repo: str, file_path: str, start_line: int = 1,
 
         return output
 
+    except httpx.HTTPStatusError as e:
+        if e.response.status_code == 404:
+            return f"Error: File or directory '{file_path}' not found in the repository. Please double check the file path."
+        logger.error(f"HTTP Error reading file {file_path} from {owner}/{repo}: {e}")
+        return f"Error reading file {file_path}: {e}"
     except GitHubRateLimitError as e:
         return f"GitHub API rate limit reached. Please wait {e.retry_after}s before retrying."
     except Exception as e:

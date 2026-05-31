@@ -14,13 +14,13 @@ from config import OPENROUTER_API_KEY
 default_llm = ChatOpenAI(
     base_url="https://openrouter.ai/api/v1",
     api_key=OPENROUTER_API_KEY,
-    model="moonshotai/kimi-k2.6:free",
+    model="google/gemma-4-31b-it:free",
     temperature=0.2,
 )
 
 structured_llm = ChatOpenAI(
     base_url="https://openrouter.ai/api/v1",
     api_key=OPENROUTER_API_KEY,
-    model="moonshotai/kimi-k2.6:free",
+    model="google/gemma-4-31b-it:free",
     temperature=0.0,
 )

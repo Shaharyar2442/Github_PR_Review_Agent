@@ -9,7 +9,7 @@ from loguru import logger
 MAX_DIFF_CHARS = 30_000  # ~7500 tokens, well within flash-lite's context
 
 
-@retry(stop=stop_after_attempt(3), wait=wait_exponential(multiplier=1, min=2, max=10))
+@retry(stop=stop_after_attempt(5), wait=wait_exponential(multiplier=2, min=5, max=60))
 def analyze_code_node(state: AgentState) -> Dict[str, Any]:
     diff = state["pr_diff"]
 

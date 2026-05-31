@@ -11,6 +11,11 @@ tenacity
 pydantic
 psycopg[binary]
 langgraph-checkpoint-postgres
+psycopg-binary
+passlib
+bcrypt
+python-jose
+python-multipart
 PyJWT
 cryptography
 gunicorn

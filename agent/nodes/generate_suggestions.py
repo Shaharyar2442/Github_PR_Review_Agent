@@ -15,20 +15,7 @@ llm = ChatGoogleGenerativeAI(
     temperature=0.4
 )
 
-# ─── YOUR TURN ──────────────────────────────────────────────
-# Goal: Concurrently ask the LLM for a code suggestion for *each* individual issue.
-# Hint: 
-# 1. We'll make this function asynchronous: 
-#    `async def generate_suggestions_node(state: AgentState) -> Dict[str, Any]:`
-# 2. Inside, get the list of `state["issues"]`.
-# 3. Write a small helper function inside the node:
-#    `async def get_suggestion(issue: str) -> str:`
-#    This helper should create a prompt asking for a fix for the specific `issue` and 
-#    use `await llm.ainvoke([HumanMessage(content=prompt)])` to call the LLM asynchronously.
-# 4. Use `asyncio.gather(*[get_suggestion(i) for i in state["issues"]])` to run all 
-#    those helper functions at exactly the same time!
-# 5. Return a dictionary mapping "suggestions" to the resulting list of strings.
-# Expected result: An async node that fetches multiple suggestions concurrently, saving a ton of time!
+
 
 # ────────────────────────────────────────────────────────────
 async def generate_suggestions_node(state: AgentState) -> Dict[str, Any]:

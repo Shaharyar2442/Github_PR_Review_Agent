@@ -12,16 +12,7 @@ def human_approval_node(state: AgentState) -> Dict[str, Any]:
         "suggestions": state.get("suggestions", [])
     }
     
-    # ─── YOUR TURN ──────────────────────────────────────────────
-    # Goal: Pause the graph using `interrupt()`.
-    # Hint: 
-    # 1. Call `interrupt(review_context)` and store the result in a variable (e.g., `human_response`).
-    #    When the graph pauses, it will yield `review_context` to the caller.
-    #    When resumed, `interrupt()` will return whatever the human passed back!
-    # 2. Return a dictionary updating the state with: `{"approval_status": human_response}`
-    # Expected result: The node pauses execution, gets human input, and updates the state.
-    # ────────────────────────────────────────────────────────────
-    # TODO: Add your interrupt logic here!
+    
     human_response=interrupt(review_context)
 
     print("Human Response:", human_response) 

@@ -80,7 +80,7 @@ def get_pr_diff(owner:str,repo:str,pr_number:int):
     response=httpx.get(url,headers=headers)
     return response.text
 
-#Tool to post PR review
+# Tool to post PR review
 @mcp.tool()
 def post_pr_review(owner:str,repo:str,pr_number:int,review:str):
     url=f"https://api.github.com/repos/{owner}/{repo}/pulls/{pr_number}/reviews"
@@ -89,6 +89,42 @@ def post_pr_review(owner:str,repo:str,pr_number:int,review:str):
     response.raise_for_status()
     return response.json()
 
-if __name__ == "__main__":
+# Tool to search codebase
+@mcp.tool()
+def search_codebase_tool(query: str, n_results: int = 5) -> str:
+    """Search the indexed codebase for files related to a natural language query."""
+    from agent.search_codebase import search_codebase
+    return search_codebase(query, n_results)
 
+# Tool to read a specific file
+@mcp.tool()
+def read_file_tool(file_path: str, start_line: int = 1, end_line: int = -1) -> str:
+    """Read lines from a specific file in the repository. Use start_line and end_line to specify a range."""
+    repo_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    full_path = os.path.join(repo_root, file_path)
+    
+    # Security check: ensure path is within repo_root
+    if not os.path.abspath(full_path).startswith(repo_root):
+        return f"Error: Cannot access files outside repository ({file_path})"
+        
+    try:
+        with open(full_path, "r", encoding="utf-8") as f:
+            lines = f.readlines()
+            
+        if end_line == -1:
+            end_line = len(lines)
+            
+        # 1-indexed to 0-indexed
+        start_idx = max(0, start_line - 1)
+        end_idx = min(len(lines), end_line)
+        
+        output = f"--- {file_path} (lines {start_line}-{end_idx}) ---\n"
+        for i, line in enumerate(lines[start_idx:end_idx]):
+            output += f"{start_idx + i + 1}: {line}"
+            
+        return output
+    except Exception as e:
+        return f"Error reading file: {e}"
+
+if __name__ == "__main__":
     mcp.run()

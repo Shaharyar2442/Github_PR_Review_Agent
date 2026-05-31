@@ -28,10 +28,10 @@ app = FastAPI(title="PR Review Agent Webhook API", lifespan=lifespan)
 # Set ALLOWED_ORIGINS env var as comma-separated list in production.
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=ALLOWED_ORIGINS,
+    allow_origins=["*"],
     allow_credentials=True,
-    allow_methods=["GET", "POST"],
-    allow_headers=["Authorization", "Content-Type"],
+    allow_methods=["*"],
+    allow_headers=["*"],
 )
 
 app.include_router(webhook.router)

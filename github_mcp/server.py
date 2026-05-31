@@ -91,10 +91,10 @@ def post_pr_review(owner:str,repo:str,pr_number:int,review:str):
 
 # Tool to search codebase
 @mcp.tool()
-def search_codebase_tool(query: str, n_results: int = 5) -> str:
+def search_codebase_tool(query: str) -> str:
     """Search the indexed codebase for files related to a natural language query."""
     from agent.search_codebase import search_codebase
-    return search_codebase(query, n_results)
+    return search_codebase(query, 5)
 
 # Tool to read a specific file
 @mcp.tool()

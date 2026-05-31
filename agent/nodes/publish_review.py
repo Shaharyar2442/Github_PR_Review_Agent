@@ -1,6 +1,6 @@
 from typing import Dict, Any
 from agent.state import AgentState
-from github_mcp.server import post_pr_review
+from agent.utils.github_api import post_pr_review
 def publish_review_node(state: AgentState) -> Dict[str, Any]:
     print("\n--- PUBLISHING REVIEW ---")
     owner=state["owner"]

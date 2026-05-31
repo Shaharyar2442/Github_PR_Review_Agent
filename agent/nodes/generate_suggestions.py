@@ -17,45 +17,46 @@ llm = ChatGoogleGenerativeAI(
 
 
 
-from agent.mcp_client import get_server_params, create_langchain_tools
-from mcp.client.stdio import stdio_client
-from mcp import ClientSession
+from agent.tools.github_tools import github_search_code, github_read_file
 from langgraph.prebuilt import create_react_agent
 
 # ────────────────────────────────────────────────────────────
 async def generate_suggestions_node(state: AgentState) -> Dict[str, Any]:
     issues = state["issues"]
+    owner = state["owner"]
+    repo = state["repo"]
     
-    # Fix OOM: We spawn the MCP connection ONCE for all issues, 
-    # instead of N concurrent subprocesses.
     suggestions = []
     
-    async with stdio_client(get_server_params()) as (read, write):
-        async with ClientSession(read, write) as session:
-            await session.initialize()
-            tools = await create_langchain_tools(session)
+    # Native LangChain tools bound directly to the agent (No MCP overhead!)
+    tools = [github_search_code, github_read_file]
+    sub_agent = create_react_agent(llm, tools=tools)
+    
+    # Process issues sequentially to avoid blowing up Render's 512MB RAM
+    for issue in issues:
+        prompt = f"""
+        You are a senior code reviewer reviewing the repository: {owner}/{repo}.
+        You are given a code issue identified in a PR.
+        Issue: {issue}
+        
+        Your job is to provide a concise, highly accurate suggestion to fix it.
+        CRITICAL: Use the 'github_search_code' and 'github_read_file' tools to search the {owner}/{repo} repository and understand the context around this issue in the codebase BEFORE answering. Always pass the owner '{owner}' and repo '{repo}' arguments to these tools.
+        
+        Return ONLY the final string suggestion.
+        """
+        
+        try:
+            result = await sub_agent.ainvoke({"messages": [("user", prompt)]})
+            final_message = result["messages"][-1].content
             
-            # Filter to only the tools we want the sub-agent to use
-            allowed_tools = [t for t in tools if t.name in ["search_codebase_tool", "read_file_tool", "get_pr_diff"]]
-            sub_agent = create_react_agent(llm, tools=allowed_tools)
-            
-            # Process issues sequentially to avoid blowing up Render's 512MB RAM
-            for issue in issues:
-                prompt = f"""
-                You are a senior code reviewer. You are given a code issue identified in a PR.
-                Issue: {issue}
+            if isinstance(final_message, list):
+                # Gemini sometimes returns a list of blocks
+                final_text = "\n".join(block.get("text", "") for block in final_message if isinstance(block, dict) and "text" in block)
+            else:
+                final_text = str(final_message)
                 
-                Your job is to provide a concise, highly accurate suggestion to fix it.
-                CRITICAL: Use the 'search_codebase_tool' and 'read_file_tool' to understand the context around this issue in the codebase BEFORE answering.
-                
-                Return ONLY the final string suggestion.
-                """
-                
-                try:
-                    result = await sub_agent.ainvoke({"messages": [("user", prompt)]})
-                    final_message = result["messages"][-1].content
-                    suggestions.append(final_message)
-                except Exception as e:
-                    suggestions.append(f"Could not generate suggestion due to error: {e}")
+            suggestions.append(final_text)
+        except Exception as e:
+            suggestions.append(f"Could not generate suggestion due to error: {e}")
 
     return {"suggestions": suggestions}

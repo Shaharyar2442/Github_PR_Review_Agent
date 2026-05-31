@@ -1,7 +1,6 @@
 from typing import Dict, Any
 from agent.state import AgentState
-from github_mcp.server import get_pr_metadata, get_pr_diff
-
+from agent.utils.github_api import get_pr_metadata, get_pr_diff
 
 # ────────────────────────────────────────────────────────────
 def fetch_pr_node(state: AgentState) -> Dict[str, Any]:

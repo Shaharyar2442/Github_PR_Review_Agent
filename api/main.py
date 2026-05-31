@@ -1,6 +1,5 @@
 from fastapi import FastAPI
-from api.routes.webhook import router as webhook_router
-from api.routes.approval import router as approval_router
+from api.routes import webhook, approval, auth
 from fastapi.middleware.cors import CORSMiddleware
 
 from contextlib import asynccontextmanager
@@ -19,13 +18,8 @@ async def lifespan(app: FastAPI):
     except Exception as e:
         pass
 
-# TODO: Initialize your app here!
-app=FastAPI(title="PR Review Agent", lifespan=lifespan)
+app = FastAPI(title="PR Review Agent Webhook API", lifespan=lifespan)
 
-
-
-app.include_router(webhook_router)
-app.include_router(approval_router)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -33,6 +27,10 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+app.include_router(webhook.router)
+app.include_router(approval.router)
+app.include_router(auth.router, prefix="/auth")
 
 if __name__ == "__main__":
     import uvicorn

@@ -14,6 +14,10 @@ GITHUB_APP_ID = os.getenv("GITHUB_APP_ID")
 GITHUB_WEBHOOK_SECRET = os.getenv("GITHUB_WEBHOOK_SECRET")
 GITHUB_PRIVATE_KEY = os.getenv("GITHUB_PRIVATE_KEY")
 
+JWT_SECRET_KEY = os.getenv("JWT_SECRET_KEY", "super-secret-key-for-local-dev-change-in-prod")
+ALGORITHM = "HS256"
+ACCESS_TOKEN_EXPIRE_MINUTES = 60 * 24 * 7 # 7 days
+
 if not GITHUB_TOKEN and not GITHUB_APP_ID:
     print("Warning: GITHUB_TOKEN or GITHUB_APP_ID is not set. GitHub API calls will fail.")
 if not GEMINI_API_KEY:

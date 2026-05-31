@@ -1,7 +1,8 @@
-from fastapi import APIRouter
+from fastapi import APIRouter, Request, Depends
 from pydantic import BaseModel
 from langgraph.types import Command
 from agent.graph import get_graph
+from api.routes.auth import get_current_user
 
 router = APIRouter()
 
@@ -11,7 +12,7 @@ class ApprovalRequest(BaseModel):
 
 
 @router.post("/approve")
-async def approve(request: ApprovalRequest):
+async def approve(request: ApprovalRequest, current_user: dict = Depends(get_current_user)):
     graph = get_graph()
     config = {"configurable": {"thread_id": request.thread_id}}
     await graph.ainvoke(Command(resume=request.status), config=config)
@@ -19,16 +20,18 @@ async def approve(request: ApprovalRequest):
     
 
 @router.get("/pending")
-async def pending():
+async def pending(current_user: dict = Depends(get_current_user)):
     try:
         graph = get_graph()
         pending_list = []
         
-        # Materialize the threads list first to release the DB connection from alist!
-        threads = [thread async for thread in graph.checkpointer.alist(None)]
+        # Get all unique thread IDs to avoid looking at historical ghost states
+        threads_generator = graph.checkpointer.alist({"configurable": {}})
+        unique_thread_ids = set([t.config["configurable"]["thread_id"] async for t in threads_generator])
         
-        for thread in threads:
-            snapshot = await graph.aget_state(thread.config)
+        for tid in unique_thread_ids:
+            # Passing only thread_id fetches the absolute latest state
+            snapshot = await graph.aget_state({"configurable": {"thread_id": tid}})
             if snapshot.next == ("human_approval",):
                 state = snapshot.values
                 pending_list.append({

@@ -20,22 +20,26 @@ async def approve(request: ApprovalRequest):
 
 @router.get("/pending")
 async def pending():
-    graph = get_graph()
-    pending_list = []
-    
-    # Materialize the threads list first to release the DB connection from alist!
-    threads = [thread async for thread in graph.checkpointer.alist({"configurable": {}})]
-    
-    for thread in threads:
-        snapshot = await graph.aget_state(thread.config)
-        if snapshot.next == ("human_approval",):
-            state = snapshot.values
-            pending_list.append({
-                "thread_id": snapshot.config["configurable"]["thread_id"],
-                "owner": state.get("owner"),
-                "repo": state.get("repo"),
-                "pr_number": state.get("pr_number"),
-                "issues": state.get("issues", []),
-                "suggestions": state.get("suggestions", [])
-            })
-    return {"pending_reviews": pending_list}
+    try:
+        graph = get_graph()
+        pending_list = []
+        
+        # Materialize the threads list first to release the DB connection from alist!
+        threads = [thread async for thread in graph.checkpointer.alist(None)]
+        
+        for thread in threads:
+            snapshot = await graph.aget_state(thread.config)
+            if snapshot.next == ("human_approval",):
+                state = snapshot.values
+                pending_list.append({
+                    "thread_id": snapshot.config["configurable"]["thread_id"],
+                    "owner": state.get("owner"),
+                    "repo": state.get("repo"),
+                    "pr_number": state.get("pr_number"),
+                    "issues": state.get("issues", []),
+                    "suggestions": state.get("suggestions", [])
+                })
+        return {"pending_reviews": pending_list}
+    except Exception as e:
+        import traceback
+        return {"error": str(e), "traceback": traceback.format_exc()}

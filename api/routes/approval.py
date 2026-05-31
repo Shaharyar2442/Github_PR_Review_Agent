@@ -34,14 +34,15 @@ async def pending(current_user: dict = Depends(get_current_user)):
             snapshot = await graph.aget_state({"configurable": {"thread_id": tid}})
             if snapshot.next == ("human_approval",):
                 state = snapshot.values
-                pending_list.append({
-                    "thread_id": snapshot.config["configurable"]["thread_id"],
-                    "owner": state.get("owner"),
-                    "repo": state.get("repo"),
-                    "pr_number": state.get("pr_number"),
-                    "issues": state.get("issues", []),
-                    "suggestions": state.get("suggestions", [])
-                })
+                if state.get("owner") == current_user.get("github_username"):
+                    pending_list.append({
+                        "thread_id": snapshot.config["configurable"]["thread_id"],
+                        "owner": state.get("owner"),
+                        "repo": state.get("repo"),
+                        "pr_number": state.get("pr_number"),
+                        "issues": state.get("issues", []),
+                        "suggestions": state.get("suggestions", [])
+                    })
         return {"pending_reviews": pending_list}
     except Exception as e:
         import traceback

@@ -114,6 +114,16 @@ export default function LoginPage() {
             {loading ? 'Signing in...' : 'Sign in'}
           </motion.button>
         </form>
+
+        <p className="mt-6 text-center text-sm text-slate-500">
+          Don't have an account?{' '}
+          <button 
+            onClick={() => router.push('/register')} 
+            className="text-indigo-600 font-semibold hover:text-indigo-500"
+          >
+            Sign up
+          </button>
+        </p>
       </motion.div>
     </div>
   );

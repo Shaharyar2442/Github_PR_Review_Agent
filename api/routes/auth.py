@@ -15,6 +15,7 @@ oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/auth/login")
 
 class UserCreate(BaseModel):
     username: str
+    github_username: str
     password: str
 
 class Token(BaseModel):
@@ -39,13 +40,17 @@ def create_access_token(data: dict, expires_delta: Optional[timedelta] = None):
     return encoded_jwt
 
 def get_user(username: str):
-    with psycopg.connect(DATABASE_URL) as conn:
-        with conn.cursor() as cur:
-            cur.execute("SELECT id, username, password_hash FROM users WHERE username = %s", (username,))
-            row = cur.fetchone()
-            if row:
-                return {"id": row[0], "username": row[1], "password_hash": row[2]}
-    return None
+    try:
+        with psycopg.connect(DATABASE_URL) as conn:
+            with conn.cursor() as cur:
+                cur.execute("SELECT id, username, password_hash, github_username FROM users WHERE username = %s", (username,))
+                row = cur.fetchone()
+                if row:
+                    return {"id": row[0], "username": row[1], "password_hash": row[2], "github_username": row[3]}
+                return None
+    except Exception as e:
+        print(f"Database error: {e}")
+        return None
 
 async def get_current_user(token: str = Depends(oauth2_scheme)):
     credentials_exception = HTTPException(
@@ -77,8 +82,8 @@ async def register(user: UserCreate):
         with psycopg.connect(DATABASE_URL, autocommit=True) as conn:
             with conn.cursor() as cur:
                 cur.execute(
-                    "INSERT INTO users (username, password_hash) VALUES (%s, %s)",
-                    (user.username, hashed_password)
+                    "INSERT INTO users (username, github_username, password_hash) VALUES (%s, %s, %s)",
+                    (user.username, user.github_username, hashed_password)
                 )
         return {"message": "User created successfully"}
     except Exception as e:

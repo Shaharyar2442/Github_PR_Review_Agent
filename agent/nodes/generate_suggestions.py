@@ -1,3 +1,4 @@
+import time
 from typing import Dict, Any
 from agent.state import AgentState
 from agent.llm import get_react_agent_llm
@@ -6,9 +7,13 @@ from langgraph.prebuilt import create_react_agent
 from loguru import logger
 
 async def generate_suggestions_node(state: AgentState) -> Dict[str, Any]:
+    start_time = time.time()
     issues = state["issues"]
     owner = state["owner"]
     repo = state["repo"]
+    pr_number = state.get("pr_number", "unknown")
+    
+    logger.info(f"[{owner}/{repo}#{pr_number}] Starting generate_suggestions_node for {len(issues)} issues...")
 
     suggestions = []
 
@@ -19,12 +24,16 @@ async def generate_suggestions_node(state: AgentState) -> Dict[str, Any]:
     @tool
     def search_repo_code(query: str) -> str:
         """Search the target GitHub repository for code matching the given query."""
-        return github_search_code.invoke({"owner": owner, "repo": repo, "query": query})
+        tool_start = time.time()
+        res = github_search_code.invoke({"owner": owner, "repo": repo, "query": query})
+        logger.debug(f"[{owner}/{repo}#{pr_number}] Tool 'search_repo_code' executed in {time.time() - tool_start:.2f}s")
+        return res
 
     @tool
     def read_repo_file(file_path: str, start_line: int = 1, end_line: int = -1) -> str:
         """Read the contents of a specific file from the target GitHub repository."""
-        return github_read_file.invoke({
+        tool_start = time.time()
+        res = github_read_file.invoke({
             "owner": owner, 
             "repo": repo, 
             "file_path": file_path, 
@@ -32,6 +41,8 @@ async def generate_suggestions_node(state: AgentState) -> Dict[str, Any]:
             "end_line": end_line, 
             "ref": head_sha
         })
+        logger.debug(f"[{owner}/{repo}#{pr_number}] Tool 'read_repo_file' executed in {time.time() - tool_start:.2f}s")
+        return res
 
     tools = [search_repo_code, read_repo_file]
     react_llm = get_react_agent_llm(tools)
@@ -39,7 +50,8 @@ async def generate_suggestions_node(state: AgentState) -> Dict[str, Any]:
 
     # Process issues sequentially to avoid blowing up Render's 512MB RAM
     for i, issue in enumerate(issues):
-        logger.info(f"Generating suggestion for issue {i+1}/{len(issues)}")
+        issue_start = time.time()
+        logger.info(f"[{owner}/{repo}#{pr_number}] Generating suggestion for issue {i+1}/{len(issues)}")
         prompt = f"""
         You are a senior code reviewer reviewing the repository: {owner}/{repo}.
         You are given a code issue identified in a Pull Request.
@@ -65,8 +77,10 @@ async def generate_suggestions_node(state: AgentState) -> Dict[str, Any]:
                 final_text = str(final_message)
 
             suggestions.append(final_text)
+            logger.info(f"[{owner}/{repo}#{pr_number}] Finished suggestion {i+1}/{len(issues)} in {time.time() - issue_start:.2f}s")
         except Exception as e:
-            logger.error(f"Failed to generate suggestion for issue: {issue[:80]}... Error: {e}")
+            logger.error(f"[{owner}/{repo}#{pr_number}] Failed suggestion for issue {i+1}: {e}")
             suggestions.append(f"Could not generate suggestion due to error: {e}")
 
+    logger.info(f"[{owner}/{repo}#{pr_number}] generate_suggestions_node completed all issues in {time.time() - start_time:.2f}s total")
     return {"suggestions": suggestions}

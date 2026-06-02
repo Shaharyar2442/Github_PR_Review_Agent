@@ -19,7 +19,7 @@ class FallbackLogger(BaseCallbackHandler):
         logger.warning(f"LLM Error encountered (fallback may trigger): {error}")
 
 _gemini = ChatGoogleGenerativeAI(
-    model="gemini-2.0-flash",
+    model="gemini-3.1-flash-lite",
     api_key=GEMINI_API_KEY,
     temperature=0.2,
     callbacks=[FallbackLogger()]
@@ -50,7 +50,7 @@ def get_structured_llm(schema):
     """
     # Create fresh instances with temperature 0.0 for deterministic structured output
     gemini_struct = ChatGoogleGenerativeAI(
-        model="gemini-2.0-flash",
+        model="gemini-3.1-flash-lite",
         api_key=GEMINI_API_KEY,
         temperature=0.0,
         callbacks=[FallbackLogger()]

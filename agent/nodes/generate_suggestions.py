@@ -64,7 +64,12 @@ async def generate_suggestions_node(state: AgentState) -> Dict[str, Any]:
         """
 
         try:
+            # Let's log exactly what model is running the React agent
+            logger.info(f"[{owner}/{repo}#{pr_number}] Invoking sub_agent for issue {i+1}...")
+            agent_start = time.time()
             result = await sub_agent.ainvoke({"messages": [("user", prompt)]})
+            logger.info(f"[{owner}/{repo}#{pr_number}] sub_agent.ainvoke completed in {time.time() - agent_start:.2f}s")
+            
             final_message = result["messages"][-1].content
 
             if isinstance(final_message, list):

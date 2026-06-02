@@ -9,16 +9,22 @@ If Gemini hits a rate limit or goes down, it automatically falls back to Groq.
 
 from langchain_groq import ChatGroq
 from langchain_google_genai import ChatGoogleGenerativeAI
+from langchain_core.callbacks import BaseCallbackHandler
+from loguru import logger
+from typing import Any
 from config import GROQ_API_KEY, GEMINI_API_KEY
 
-# ─── Primary (Gemini) ───
+class FallbackLogger(BaseCallbackHandler):
+    def on_llm_error(self, error: BaseException, **kwargs: Any) -> Any:
+        logger.warning(f"LLM Error encountered (fallback may trigger): {error}")
+
 _gemini = ChatGoogleGenerativeAI(
-    model="gemini-2.5-flash",
+    model="gemini-2.0-flash",
     api_key=GEMINI_API_KEY,
     temperature=0.2,
+    callbacks=[FallbackLogger()]
 )
 
-# ─── Fallback (Groq) ───
 _groq = ChatGroq(
     api_key=GROQ_API_KEY,
     model="llama-3.3-70b-versatile",
@@ -44,9 +50,10 @@ def get_structured_llm(schema):
     """
     # Create fresh instances with temperature 0.0 for deterministic structured output
     gemini_struct = ChatGoogleGenerativeAI(
-        model="gemini-2.5-flash",
+        model="gemini-2.0-flash",
         api_key=GEMINI_API_KEY,
         temperature=0.0,
+        callbacks=[FallbackLogger()]
     ).with_structured_output(schema)
     
     groq_struct = ChatGroq(

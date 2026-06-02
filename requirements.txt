@@ -16,3 +16,5 @@ PyJWT
 cryptography
 python-multipart
 gunicorn
+langchain-google-genai
+google-generativeai

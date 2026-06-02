@@ -8,6 +8,7 @@ load_dotenv()
 # Boilerplate configuration loading
 GITHUB_TOKEN = os.getenv("GITHUB_TOKEN")
 GROQ_API_KEY = os.getenv("GROQ_API_KEY")
+GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
 
 # Phase 9: Cloud configuration
 DATABASE_URL = os.getenv("DATABASE_URL")

@@ -1,7 +1,7 @@
 from typing import Dict, Any, List
 from pydantic import BaseModel, Field
 from agent.state import AgentState
-from agent.llm import structured_llm
+from agent.llm import get_structured_llm
 from langchain_core.messages import HumanMessage
 
 
@@ -11,7 +11,7 @@ class IssueList(BaseModel):
 
 
 def classify_issues_node(state: AgentState) -> Dict[str, Any]:
-    llm_with_schema = structured_llm.with_structured_output(IssueList)
+    llm_with_schema = get_structured_llm(IssueList)
     prompt = f""" You are a senior code reviewer. Analyze the following raw analysis from a code review and extract all the issues and potential bugs into a structured list.
     Raw Analysis:{state['raw_analysis']}
     

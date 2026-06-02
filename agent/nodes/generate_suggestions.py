@@ -1,10 +1,9 @@
 from typing import Dict, Any
 from agent.state import AgentState
-from agent.llm import default_llm
+from agent.llm import get_react_agent_llm
 from agent.tools.github_tools import github_search_code, github_read_file
 from langgraph.prebuilt import create_react_agent
 from loguru import logger
-
 
 async def generate_suggestions_node(state: AgentState) -> Dict[str, Any]:
     issues = state["issues"]
@@ -35,7 +34,8 @@ async def generate_suggestions_node(state: AgentState) -> Dict[str, Any]:
         })
 
     tools = [search_repo_code, read_repo_file]
-    sub_agent = create_react_agent(default_llm, tools=tools)
+    react_llm = get_react_agent_llm(tools)
+    sub_agent = create_react_agent(react_llm, tools=tools)
 
     # Process issues sequentially to avoid blowing up Render's 512MB RAM
     for i, issue in enumerate(issues):

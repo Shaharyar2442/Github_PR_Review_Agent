@@ -1,23 +1,59 @@
 """
-Shared LLM instances for the agent pipeline.
+Shared LLM instances for the agent pipeline with Fallbacks.
 
-Instead of each node creating its own ChatGoogleGenerativeAI client
-(each with its own HTTP connection pool and internal buffers), we
-share instances here to reduce memory footprint on the 512MB Render tier.
+We use Gemini as the primary LLM because its free tier offers 1,000,000 TPM
+(Tokens Per Minute), which easily handles massive 30,000-character PR diffs.
+
+If Gemini hits a rate limit or goes down, it automatically falls back to Groq.
 """
 
 from langchain_groq import ChatGroq
-from config import GROQ_API_KEY
+from langchain_google_genai import ChatGoogleGenerativeAI
+from config import GROQ_API_KEY, GEMINI_API_KEY
 
-# Groq provides extremely fast inference and a generous free tier
-default_llm = ChatGroq(
+# ─── Primary (Gemini) ───
+_gemini = ChatGoogleGenerativeAI(
+    model="gemini-2.5-flash",
+    api_key=GEMINI_API_KEY,
+    temperature=0.2,
+)
+
+# ─── Fallback (Groq) ───
+_groq = ChatGroq(
     api_key=GROQ_API_KEY,
     model="llama-3.3-70b-versatile",
     temperature=0.2,
 )
 
-structured_llm = ChatGroq(
-    api_key=GROQ_API_KEY,
-    model="llama-3.3-70b-versatile",
-    temperature=0.0,
-)
+# Expose the default LLM (for basic generation)
+default_llm = _gemini.with_fallbacks([_groq])
+
+def get_react_agent_llm(tools):
+    """
+    Returns an LLM with tools bound, ensuring the fallback mechanism
+    applies to both the primary and fallback LLMs safely.
+    """
+    gemini_bound = _gemini.bind_tools(tools)
+    groq_bound = _groq.bind_tools(tools)
+    return gemini_bound.with_fallbacks([groq_bound])
+
+def get_structured_llm(schema):
+    """
+    Returns an LLM bound to a specific Pydantic schema for structured output,
+    with the fallback mechanism intact.
+    """
+    # Create fresh instances with temperature 0.0 for deterministic structured output
+    gemini_struct = ChatGoogleGenerativeAI(
+        model="gemini-2.5-flash",
+        api_key=GEMINI_API_KEY,
+        temperature=0.0,
+    ).with_structured_output(schema)
+    
+    groq_struct = ChatGroq(
+        api_key=GROQ_API_KEY,
+        model="llama-3.3-70b-versatile",
+        temperature=0.0,
+    ).with_structured_output(schema)
+    
+    # Apply fallback AFTER the structured output wrapper is applied to both
+    return gemini_struct.with_fallbacks([groq_struct])

@@ -48,8 +48,9 @@ async def generate_suggestions_node(state: AgentState) -> Dict[str, Any]:
     react_llm = get_react_agent_llm(tools)
     sub_agent = create_react_agent(react_llm, tools=tools)
 
-    # Process issues sequentially to avoid blowing up Render's 512MB RAM
-    for i, issue in enumerate(issues):
+    import asyncio
+
+    async def process_issue(i: int, issue: str) -> str:
         issue_start = time.time()
         logger.info(f"[{owner}/{repo}#{pr_number}] Generating suggestion for issue {i+1}/{len(issues)}")
         prompt = f"""
@@ -81,11 +82,15 @@ async def generate_suggestions_node(state: AgentState) -> Dict[str, Any]:
             else:
                 final_text = str(final_message)
 
-            suggestions.append(final_text)
             logger.info(f"[{owner}/{repo}#{pr_number}] Finished suggestion {i+1}/{len(issues)} in {time.time() - issue_start:.2f}s")
+            return final_text
         except Exception as e:
             logger.error(f"[{owner}/{repo}#{pr_number}] Failed suggestion for issue {i+1}: {e}")
-            suggestions.append(f"Could not generate suggestion due to error: {e}")
+            return f"Could not generate suggestion due to error: {e}"
 
-    logger.info(f"[{owner}/{repo}#{pr_number}] generate_suggestions_node completed all issues in {time.time() - start_time:.2f}s total")
+    # Execute all issues in parallel
+    tasks = [process_issue(i, issue) for i, issue in enumerate(issues)]
+    suggestions = await asyncio.gather(*tasks)
+
+    logger.info(f"[{owner}/{repo}#{pr_number}] generate_suggestions_node completed all {len(issues)} issues in {time.time() - start_time:.2f}s total")
     return {"suggestions": suggestions}
